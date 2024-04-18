@@ -103,30 +103,33 @@ def RR():
         
         for process in range(len(remaining_processes)):
             if remaining_processes[process].remaining_time > 0:
-                if remaining_processes[process].remaining_time > quantum_time:
-                    start_quantum_time_of_process = end_quantum_time_of_process
-                    end_quantum_time_of_process += quantum_time
+                start_quantum_time_of_process = end_quantum_time_of_process
+                end_quantum_time_of_process += quantum_time
 
-                    scheduling.append((start_quantum_time_of_process, remaining_processes[process].name, end_quantum_time_of_process))
-                
-                    remaining_processes[process].remaining_time -= quantum_time
+                scheduling.append((start_quantum_time_of_process, remaining_processes[process].name, end_quantum_time_of_process))
+            
+                remaining_processes[process].remaining_time -= quantum_time
 
-                    if remaining_processes[process].remaining_time <= 0:
-                        remaining_processes[process].remaining_time = 0
-                        remaining_processes[process].set_completion_time(end_quantum_time_of_process)
+                if remaining_processes[process].remaining_time <= 0:
+                    remaining_processes[process].remaining_time = 0
 
         current_time += quantum_time
 
         remaining_processes = [process for process in remaining_processes if process.remaining_time > 0]
 
+    # Set completion time for each process after all iterations
+    for process in processes_group:
+        process.set_completion_time(current_time)
+
     waiting_time = calculate_waiting_time([process.completion_time for process in processes_group])
     turnaround_time = calculate_turnaround_time([process.completion_time for process in processes_group])
     
     print(scheduling)
-    # write_output("RR.txt", scheduling, processes, turnaround_time, waiting_time)
+    # write_output("RR.txt", scheduling, processes_group, turnaround_time, waiting_time)
 
     for i in range(num_processes):
         processes_group[i].set_remaining_time_again()
+
 
 # def SJF():
 #     processes_group.sort(key=lambda x: x.arrival_time) # Sort processes by arrival time
