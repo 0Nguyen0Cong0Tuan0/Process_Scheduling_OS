@@ -64,7 +64,7 @@ def check_load_process(current_time):
 
 def write_output(file_name, scheduling, turnaround_time, waiting_time):
     with open(file_name, 'w') as f:
-        f.write("Scheduling chart: ")
+        f.write("Scheduling: ")
 
         for event in scheduling:
             f.write(f"| {event[0]} ~ {event[1]} ~ {event[2]} ")
@@ -157,6 +157,39 @@ def RR():
         processes_group[i].set_remaining_time_again()
 
 def SJF():
+    processes_group.sort(key=lambda x: x.arrival_time) # Sort processes by arrival time
+
+    scheduling = []
+    remaining_processes = processes_group[:]
+    current_time = 0
+
+    while remaining_processes:
+        arriving_processes = [process for process in remaining_processes if process.arrival_time <= current_time]
+        
+        if arriving_processes:
+            process_min_cpu_burst = min(arriving_processes, key=lambda process: process.cpu_burst)
+            
+            start_of_process = current_time
+            end_of_process = current_time + process_min_cpu_burst.cpu_burst
+            
+            scheduling.append((start_of_process, process_min_cpu_burst.name, end_of_process))
+            
+            current_time = end_of_process
+            
+            remaining_processes.remove(process_min_cpu_burst)
+        else:
+            current_time += 1
+
+    waiting_time = calculate_waiting_time([process.completion_time for process in processes_group])
+    turnaround_time = calculate_turnaround_time([process.completion_time for process in processes_group])
+
+    write_output("SJF.txt", scheduling, turnaround_time, waiting_time)
+
+    for process in processes_group:
+        process.set_remaining_time_again()
+
+
+def SRTN():
     processes_group.sort(key=lambda x: x.arrival_time)  # Sort processes by arrival time
 
     scheduling = []
@@ -174,25 +207,25 @@ def SJF():
             process_loaded_number += 1
 
         if remaining_processes:
-            process_min_cpu_burst = min(remaining_processes, key=lambda process: process.remaining_time)
+            process_min_remaining_time = min(remaining_processes, key=lambda process: process.remaining_time)
 
-            if id_current_process != process_min_cpu_burst:
+            if id_current_process != process_min_remaining_time:
                 if start_time != current_time and id_current_process in remaining_processes:
                     scheduling.append((start_time, id_current_process.name, current_time))
                 start_time = current_time
-                id_current_process = process_min_cpu_burst
+                id_current_process = process_min_remaining_time
 
-            process_min_cpu_burst.remaining_time -= 1
+            process_min_remaining_time.remaining_time -= 1
             current_time += 1
 
             if not remaining_processes:
                 id_current_process = processes_group[process_loaded_number]
 
-            if process_min_cpu_burst.remaining_time == 0:
+            if process_min_remaining_time.remaining_time == 0:
                 scheduling.append((start_time, id_current_process.name, current_time))
                 id_current_process.set_completion_time(current_time)
                 start_time = current_time
-                remaining_processes.remove(process_min_cpu_burst)
+                remaining_processes.remove(process_min_remaining_time)
 
         else:
             current_time += 1
@@ -201,7 +234,7 @@ def SJF():
     waiting_time = calculate_waiting_time([process.completion_time for process in processes_group])
     turnaround_time = calculate_turnaround_time([process.completion_time for process in processes_group])
 
-    write_output("SJF.txt", scheduling, turnaround_time, waiting_time)
+    write_output("SRTN.txt", scheduling, turnaround_time, waiting_time)
 
     for process in processes_group:
         process.set_remaining_time_again()
@@ -224,24 +257,24 @@ def Priority():
             process_loaded_number += 1
 
         if remaining_processes:
-            process_highest_cpu_burst = min(remaining_processes, key=lambda process: process.priority)
+            process_highest_priority = min(remaining_processes, key=lambda process: process.priority)
 
-            if id_current_process != process_highest_cpu_burst:
+            if id_current_process != process_highest_priority:
                 if start_time != current_time and id_current_process in remaining_processes:
                     scheduling.append((start_time, id_current_process.name, current_time))
                 start_time = current_time
-                id_current_process = process_highest_cpu_burst
+                id_current_process = process_highest_priority
 
-            process_highest_cpu_burst.remaining_time -= 1
+            process_highest_priority.remaining_time -= 1
             current_time += 1
 
             if not remaining_processes:
                 id_current_process = processes_group[process_loaded_number]
 
-            if process_highest_cpu_burst.remaining_time == 0:
+            if process_highest_priority.remaining_time == 0:
                 scheduling.append((start_time, id_current_process.name, current_time))
                 start_time = current_time
-                remaining_processes.remove(process_highest_cpu_burst)
+                remaining_processes.remove(process_highest_priority)
 
         else:
             current_time += 1
@@ -256,6 +289,7 @@ def main():
     FCFS()
     RR()
     SJF()
+    SRTN()
     Priority()
 
 if __name__ == "__main__":
